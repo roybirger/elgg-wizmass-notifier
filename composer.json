@@ -1,0 +1,29 @@
+{
+    "name": "wizmass/notifier",
+    "description": "Generic push notifications in Elgg using websockets.",
+    "type": "elgg-plugin",
+    "keywords": [
+        "elgg",
+        "plugin",
+        "notifications",
+        "websockets",
+        "wizmass"
+    ],
+    "license": "Apache",
+    "authors": [
+        {
+            "name": "Roy Birger",
+            "email": "birger.roy@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "WizmassNotifier": "classes"
+        }
+    },
+    "require": {
+        "cboden/ratchet": "0.3.*",
+        "react/zmq": "0.2.*|0.3.*"
+    }
+}
