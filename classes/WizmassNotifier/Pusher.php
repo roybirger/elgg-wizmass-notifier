@@ -11,22 +11,19 @@ namespace WizmassNotifier;
 use Ratchet\ConnectionInterface;
 use Ratchet\WebSocket\WsServerInterface;
 use Ratchet\MessageComponentInterface;
+use WizmassNotifier\Messages\MessageHandler;
 
 class Pusher implements MessageComponentInterface {
 
-    /**
-     * A lookup of all the topics clients have subscribed to
-     */
-    protected $subscribers;
+
 
     protected $clients;
 
-    private $tokens;
+    protected $messageHandler;
 
     public function __construct($tokens) {
-        $this->tokens = $tokens;
         $this->clients = new \SplObjectStorage;
-        $this->subscribers = array();
+        $this->messageHandler = new MessageHandler($tokens);
     }
 
     public function getSubProtocols() {
@@ -39,19 +36,8 @@ class Pusher implements MessageComponentInterface {
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
-        $data = json_decode($msg);
 
-        switch ($data->type) {
-            case 'register':
-                $this->userRegister($from, $data);
-                break;
-            case 'fetch':
-                $this->updateUserCB($from, $data);
-                break;
-            default:
-                echo 'Error: unknown message';
-        }
-
+        $this->messageHandler->HandleMessage($from, $msg);
     }
 
     public function onSubscribe(ConnectionInterface $conn, $topic) {
@@ -63,18 +49,11 @@ class Pusher implements MessageComponentInterface {
      * @param string JSON'ified string we'll receive from ZeroMQ
      */
     public function onNotificationMessage($entry) {
-        $data = json_decode($entry);
-        echo "Sending a notification to user GUID {$data->recipient_guid}\n";
-        if (isset($this->subscribers[$data->recipient_guid])) {
-            $connection = $this->subscribers[$data->recipient_guid];
 
-            $response = array(
-                'data' => $data->text,
-                'callbackId' => $connection->callbackId
-            );
-
-            $connection->send(json_encode($response));
-        }
+        $this->messageHandler->HandleMessage(null,json_encode(array(
+            'type' => 'send',
+            'data' => $entry
+        )));
     }
 
     public function onUnSubscribe(ConnectionInterface $conn, $topic) {
@@ -99,34 +78,5 @@ class Pusher implements MessageComponentInterface {
     public function onError(ConnectionInterface $conn, \Exception $e) {
         echo "An error has occurred: {$e->getMessage()}\n";
         $conn->close();
-    }
-
-
-    private function userRegister($client, $data)
-    {
-        echo "Connection {$client->resourceId} is subscribing for notifications\n";
-
-        //if ($this->tokens->validateToken($data->token)) {
-        // TODO Should the storage be injected?
-        // TODO Remove users from the storage when they log out.
-        $this->subscribers[$data->guid] = $client;
-
-        $response = array(
-            'data' => 'Thank you for registering...',
-            'callbackId' => $data->callbackId
-        );
-
-        $client->send(json_encode($response));
-        //}
-
-    }
-
-    private function updateUserCB($client, $data){
-
-        echo "Connection {$client->resourceId} is fetching notifications\n";
-
-        if (isset($this->subscribers[$data->guid])) {
-            $this->subscribers[$data->guid]->callbackId = $data->callbackId;
-        }
     }
 }

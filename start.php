@@ -5,6 +5,10 @@
  * @package WizmassNotifier
  */
 
+use WizmassNotifier\NotificationFactory;
+
+require_once(dirname(__FILE__) . '/../../engine/start.php');
+
 elgg_register_event_handler('init', 'system', 'wizmass_notifier_init');
 
 /**
@@ -17,6 +21,7 @@ function wizmass_notifier_init() {
     //elgg_register_notification_event('object', 'wizmass_poll', array('update'));
     //elgg_register_plugin_hook_handler('prepare', 'notification:update:object:wizmass_poll', 'wizmass_notifier_notification_prepare');
     elgg_register_plugin_hook_handler('send', 'notification:update:object:wizmass_poll', 'wizmass_notifier_notification_send');
+    //elgg_register_plugin_hook_handler('register', 'register_notification_type', 'wizmass_notifier_register_type');
     //elgg_register_notification_method('wizmass_notifier_notification_send');
 
 }
@@ -33,54 +38,11 @@ function wizmass_notifier_init() {
  */
 function wizmass_notifier_notification_send($hook, $type, $result, $params) {
 
-    echo 'welcome...';
-
+    /** @var WizmassNotifier\Interfaces\WizmassNotification $notification */
     $notification = $params['notification'];
 
-    echo 'got notification: ' . $notification;
-
-    $event = $params['event'];
-
-    echo 'got event: ' . $event;
-
-//    if (!$event) {
-//        // The notification would be incomplete without the event
-//        return false;
-//    }
-//
-//    $ia = elgg_set_ignore_access(true);
-//
-//    $action = $event->getAction();
-//    $object = $event->getObject();
-//    $string = "river:{$action}:{$object->getType()}:{$object->getSubtype()}";
-//    $recipient = $notification->getRecipient();
-//    $actor = $event->getActor();
-//    switch ($object->getType()) {
-//        case 'annotation':
-//            // Get the entity that was annotated
-//            $entity = $object->getEntity();
-//            break;
-//        case 'relationship':
-//            $entity = get_entity($object->guid_two);
-//            break;
-//        default:
-//            if ($object instanceof ElggComment) {
-//                // Use comment's container as notification target
-//                $entity = $object->getContainerEntity();
-//
-//                // Check the action because this isn't necessarily a new comment,
-//                // but e.g. someone being mentioned in a comment
-//                if ($action == 'create') {
-//                    $string = "river:comment:{$entity->getType()}:{$entity->getSubtype()}";
-//                }
-//            } else {
-//                // This covers all other entities
-//                $entity = $object;
-//            }
-//    }
-//    elgg_set_ignore_access($ia);
-
-    //return "I've arrived";
+    echo 'got notification: ' . $notification->guid . PHP_EOL;
+    echo 'got subjects: ' . count($notification->getSubjects()) . PHP_EOL;
 
 
     require __DIR__ . '/vendor/autoload.php';
@@ -89,8 +51,13 @@ function wizmass_notifier_notification_send($hook, $type, $result, $params) {
     $socket = $context->getSocket(ZMQ::SOCKET_PUSH, 'my pusher');
     $socket->connect("tcp://localhost:5555");
 
+    $subjects = [];
+    foreach($notification->getSubjects() as $subject) {
+        $subjects[] = array('guid' => $subject->guid);
+    }
+
     $msg = new \stdClass();
-    $msg->recipient_guid = 123456789;
+    $msg->recipient_guids = $subjects;
     //$msg->recipient_guid = $recipient->guid;
 //    $msg->subject_name = $actor->getDisplayName();
 //    $msg->subject_url = $actor->getURL();
@@ -98,10 +65,25 @@ function wizmass_notifier_notification_send($hook, $type, $result, $params) {
 //    $msg->target_url = $entity->getURL();
 //    $msg->text = $string;
 //    $msg->icon_url = $actor->getIconURL();
-    $msg->text = 'notification!!!';
+    $msg->data = $notification->BuildNotificationData();
+
+    echo 'encoded notification data: ' . json_encode($msg) . PHP_EOL;
 
     $socket->send(json_encode($msg));
 }
+
+
+//function wizmass_notifier_register_type($hook, $type, $result, $params) {
+//
+//    echo 'Registering type: ' . $params['typeName'] . PHP_EOL;
+//
+//    /** @var NotificationFactory $notificationFactory */
+//    $notificationFactory = NotificationFactory::getInstance();
+//    $notificationFactory->RegisterType($params['typeName'],$params['typeBuilder']);
+//
+//    echo 'hash abx: ' . spl_object_hash($notificationFactory);
+//    echo 'types: ' . $notificationFactory->Count();
+//}
 
 /**
  * prepare real-time notifications to subscribed users
