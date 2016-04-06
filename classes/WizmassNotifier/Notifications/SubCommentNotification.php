@@ -11,11 +11,11 @@ namespace WizmassNotifier\Notifications;
 use WizmassNotifier\Interfaces\WizmassNotification;
 use Elgg;
 
-class MyCommentNotification extends WizmassNotification
+class SubCommentNotification extends WizmassNotification
 {
 
     /**
-     * MyCommentNotification constructor.
+     * SubCommentNotification constructor.
      * @param null|\stdClass $base
      */
     public function __construct($base = null)
@@ -33,15 +33,22 @@ class MyCommentNotification extends WizmassNotification
     protected function initializeAttributes() {
         parent::initializeAttributes();
 
-        $this->attributes['subtype'] = "my_comment_notification";
+        $this->attributes['subtype'] = "sub_comment_notification";
     }
 
     public function BuildNotificationData()
     {
         return array(
             'comment_guid' => $this->comment_guid,
+            'original_comment_guid' => $this->original_comment_guid,
             'notification_guid' => $this->guid,
-            'aggregation_key' => $this->BuildAggregationKey());
+            'aggregation_key' => $this->BuildAggregationKey(),
+            'pusher_guid'    => $this->commenter_guid,
+            'pusher_name'    => $this->commenter_name,
+            'pusher_image'   => $this->commenter_image,
+            'pusher_data'    => $this->commenter_text,
+            'timestamp'         => $this->getTimeCreated(),
+            'href'              => $this->href);
     }
 
     public function BuildAggregationKey()

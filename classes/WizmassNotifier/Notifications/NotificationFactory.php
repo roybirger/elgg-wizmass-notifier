@@ -44,25 +44,18 @@ class NotificationFactory {
 //    }
 
     /**
-     * @param $entity ElggEntity
+     * @param \ElggEntity $entity
      */
     public function Build($entity) {
 
-//        if (in_array($entity->getSubtype(),static::$types)) {
-//
-//            $func = static::$types[$entity->getSubtype()];
-//
-//            return $func($entity);
-//        }
-//        else {
-//            return false;
-//        }
-
+        echo $entity->guid . PHP_EOL;
         echo $entity->getSubtype() . PHP_EOL;
 
         switch ($entity->getSubtype()) {
-            case 'my_comment_notification':
-                return new \WizmassNotifier\Notifications\MyCommentNotification($entity);
+            case 'sub_comment_notification':
+                return new \WizmassNotifier\Notifications\SubCommentNotification($entity);
+            case 'rate_comment_notification':
+                return new \WizmassNotifier\Notifications\RateCommentNotification($entity);
             default:
                 return false;
         }

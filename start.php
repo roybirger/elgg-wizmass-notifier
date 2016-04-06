@@ -41,9 +41,13 @@ function wizmass_notifier_notification_send($hook, $type, $result, $params) {
     /** @var WizmassNotifier\Interfaces\WizmassNotification $notification */
     $notification = $params['notification'];
 
-    echo 'got notification: ' . $notification->guid . PHP_EOL;
-    echo 'got subjects: ' . count($notification->getSubjects()) . PHP_EOL;
+    //echo 'got notification: ' . $notification->guid . PHP_EOL;
 
+    //$ia = elgg_set_ignore_access(true);
+
+    //echo 'got subjects: ' . count($notification->getSubjects()) . PHP_EOL;
+
+    //elgg_set_ignore_access($ia);
 
     require __DIR__ . '/vendor/autoload.php';
 
@@ -67,7 +71,7 @@ function wizmass_notifier_notification_send($hook, $type, $result, $params) {
 //    $msg->icon_url = $actor->getIconURL();
     $msg->data = $notification->BuildNotificationData();
 
-    echo 'encoded notification data: ' . json_encode($msg) . PHP_EOL;
+    //echo 'encoded notification data: ' . json_encode($msg) . PHP_EOL;
 
     $socket->send(json_encode($msg));
 }

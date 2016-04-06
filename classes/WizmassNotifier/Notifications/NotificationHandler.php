@@ -16,7 +16,7 @@ class NotificationHandler {
 
     public function GetPendingNotifications($data)
     {
-        //$ia = elgg_set_ignore_access(true);
+
 
         $notifications = elgg_get_entities_from_relationship(array(
             'relationship' => \WizmassNotifier\Interfaces\WizmassNotification::HAS_ACTOR,
@@ -30,9 +30,8 @@ class NotificationHandler {
             'inverse_relationship' => true
         ));
 
-        $readNotificationsGuids = array_map(function ($item) { return $item->guid; }, $readNotifications);
 
-        //elgg_set_ignore_access($ia);
+        $readNotificationsGuids = array_map(function ($item) { return $item->guid; }, $readNotifications);
 
         echo "Got: " .  count($notifications) . ' unread notifications' . PHP_EOL;
         echo "Got: " .  count($readNotifications) . ' read notifications' . PHP_EOL;
@@ -68,9 +67,13 @@ class NotificationHandler {
         /** @var /ElggUser $user */
         $user = get_user($data->token->user_guid);
 
+        echo 'count guids:  ' . count($data->notificationGuids);
+
         if ($user) {
 
             foreach($data->notificationGuids as $guid) {
+
+                echo 'reading guid: ' . $guid;
 
                 $notification = get_entity($guid);
 
@@ -86,7 +89,7 @@ class NotificationHandler {
 
                 } else {
                     //todo
-                    //error
+                    echo 'error...';
                 }
             }
         }
