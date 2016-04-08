@@ -44,18 +44,24 @@ class NotificationHandler {
         /** @var \ElggEntity $notification */
         foreach ($notifications as $notification) {
 
-            if (!in_array($notification->guid,$readNotificationsGuids)) {
+            /** @var WizmassNotification $wizmassNotification */
+            $wizmassNotification = $notificationFactory->Build($notification);
 
-                /** @var WizmassNotification $wizmassNotification */
-                $wizmassNotification = $notificationFactory->Build($notification);
+            if (!$wizmassNotification) {
+                echo 'error building notifications' . PHP_EOL;
+            }
+            else {
 
-                if (!$wizmassNotification) {
-                    echo 'error building notifications' . PHP_EOL;
+                $data = $wizmassNotification->BuildNotificationData();
+
+                if (!in_array($notification->guid,$readNotificationsGuids)) {
+                    $data['read'] = false;
                 }
                 else {
-
-                    $notificationsToSend[] = $wizmassNotification->BuildNotificationData();
+                    $data['read'] = true;
                 }
+
+                $notificationsToSend[] = $data;
             }
         }
 
