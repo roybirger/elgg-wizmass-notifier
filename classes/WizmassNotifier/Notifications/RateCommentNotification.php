@@ -11,6 +11,8 @@ namespace WizmassNotifier\Notifications;
 use WizmassNotifier\Interfaces\WizmassNotification;
 use Elgg;
 
+require_once(dirname(__FILE__) . '/../Interfaces/WizmassNotification.php');
+
 class RateCommentNotification extends WizmassNotification
 {
 
@@ -47,7 +49,8 @@ class RateCommentNotification extends WizmassNotification
             'pusher_image'           => $this->rater_image,
             'pusher_data'                  => $this->rate,
             'timestamp'             => $this->getTimeCreated(),
-            'href'                  => $this->href);
+            'href'                  => $this->href,
+            'notification_type' => $this->notificationType);
     }
 
     public function BuildAggregationKey()

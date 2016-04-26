@@ -12,6 +12,7 @@ namespace WizmassNotifier\Messages;
 use Ratchet\ConnectionInterface;
 use WizmassNotifier\ClientsManager;
 use WizmassNotifier\Notifications\NotificationHandler;
+use Monolog\Logger;
 
 require_once(dirname(__FILE__) . '/../ClientManager.php');
 
@@ -22,14 +23,19 @@ class MessageHandler {
 
     protected $notificationHandler;
 
+    protected $logger;
+
     /**
      * MessageHandler constructor.
+     * @param $tokens
+     * @param Logger $logger
      */
-    public function __construct($tokens)
+    public function __construct($tokens, $logger)
     {
         //todo: inject
-        $this->clientsManager = new ClientsManager($tokens);
-        $this->notificationHandler = new NotificationHandler();
+        $this->clientsManager = new ClientsManager($tokens,$logger);
+        $this->notificationHandler = new NotificationHandler($logger);
+        $this->logger = $logger;
     }
 
     public function HandleMessage($from, $msg) {
@@ -51,14 +57,14 @@ class MessageHandler {
                 $this->sendMessage($data->data);
                 break;
             default:
-                echo 'Error: unknown message';
+                $this->logger->error('Error: unknown message type: ' . $data->type);
         }
 
     }
 
     private function userRegister($client, $data)
     {
-        echo "Connection {$client->resourceId} is subscribing for notifications\n";
+        $this->logger->info("Connection {$client->resourceId} is subscribing for notifications");
 
         if ($this->clientsManager->AddClient($client,$data)) {
 
@@ -71,28 +77,27 @@ class MessageHandler {
         }
         else {
 
-            echo 'could not validate user' . PHP_EOL;
+            $this->logger->info('could not validate user: ' . $data->token->user_guid);
 
         }
     }
 
     private function userFetchNotificationsRequest($client, $data)
     {
-
-        echo "Connection {$client->resourceId} is fetching notifications\n";
+        $this->logger->info("Connection {$client->resourceId} is fetching notifications");
 
         if ($this->clientsManager->IsSubscribed($data->token->user_guid))
         {
             $this->clientsManager->UpdateUserRequest($data);
         }
         else {
-            echo 'user is not subscribed' . PHP_EOL;
+            $this->logger->info('user is not subscribed. user: ' . $data->token->user_guid);
         }
     }
 
     private function markAsRead($client, $data)
     {
-        echo "Connection {$client->resourceId} is marking notification {$data->notificationGuids} as read\n";
+        $this->logger->info("Connection {$client->resourceId} is marking notification {$data->notificationGuids} as read");
 
         $this->notificationHandler->MarkAsRead($data);
     }
@@ -104,7 +109,7 @@ class MessageHandler {
         //todo: make effective
         foreach($data->recipient_guids as $user) {
 
-            echo "Sending a notification to user GUID {$user->guid}\n";
+            $this->logger->info("Sending a notification to user GUID {$user->guid}");
 
             if ($this->clientsManager->IsSubscribed($user->guid))
             {
@@ -112,20 +117,8 @@ class MessageHandler {
                 $this->clientsManager->SendUserResponse($user->guid, array($data->data));
             }
             else {
-                echo 'not subscribed...' . PHP_EOL;
-                var_dump($user);
+                $this->logger->info("user not subscribed");
             }
-//
-//            if (isset($this->subscribers[$user->guid])) {
-//                $connection = $this->subscribers[$user->guid];
-//
-//                $response = array(
-//                    'data' => $data->text,
-//                    'callbackId' => $connection->callbackId
-//                );
-//
-//                $connection->send(json_encode($response));
-//            }
         }
     }
 }

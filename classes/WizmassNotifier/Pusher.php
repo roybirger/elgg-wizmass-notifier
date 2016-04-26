@@ -8,22 +8,37 @@
 
 namespace WizmassNotifier;
 
+//use Elgg\Logger;
 use Ratchet\ConnectionInterface;
 use Ratchet\WebSocket\WsServerInterface;
 use Ratchet\MessageComponentInterface;
 use WizmassNotifier\Messages\MessageHandler;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Handler\FirePHPHandler;
+
 
 class Pusher implements MessageComponentInterface {
 
 
-
+    const LOG_FILE_NAME = '/tmp/push-server.log';
     protected $clients;
 
     protected $messageHandler;
 
+    protected $resourceToUserData;
+
+    protected $logger;
+
     public function __construct($tokens) {
         $this->clients = new \SplObjectStorage;
-        $this->messageHandler = new MessageHandler($tokens);
+        $this->resourceToUserData = Array();
+        $this->logger = new Logger('push_server_logger');
+        $this->logger->pushHandler(new StreamHandler(self::LOG_FILE_NAME,Logger::DEBUG));
+        $this->logger->pushHandler(new FirePHPHandler());
+        $this->messageHandler = new MessageHandler($tokens,$this->logger);
+
+
     }
 
     public function getSubProtocols() {
@@ -32,7 +47,7 @@ class Pusher implements MessageComponentInterface {
     public function onOpen(ConnectionInterface $conn) {
         // Store the new connection to send messages to later
         $this->clients->attach($conn);
-        echo "New connection from a client! ({$conn->resourceId})\n";
+        $this->logger->info("New Connection from a client. Resource ID:  {$conn->resourceId}");
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
@@ -62,7 +77,7 @@ class Pusher implements MessageComponentInterface {
     public function onClose(ConnectionInterface $conn) {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
-        echo "Connection {$conn->resourceId} has disconnected\n";
+        $this->logger->info("Connection {$conn->resourceId} has disconnected");
     }
 
     public function onCall(ConnectionInterface $conn, $id, $topic, array $params) {
@@ -76,7 +91,7 @@ class Pusher implements MessageComponentInterface {
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
-        echo "An error has occurred: {$e->getMessage()}\n";
+        $this->logger->error("An error has occurred: {$e->getMessage()}");
         $conn->close();
     }
 }

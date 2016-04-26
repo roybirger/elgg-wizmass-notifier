@@ -11,13 +11,22 @@ namespace WizmassNotifier\Notifications;
 use WizmassNotifier\Interfaces\WizmassNotification;
 use WizmassNotifier\Notifications\NotificationFactory;
 use Elgg;
+use Monolog\Logger;
 
 class NotificationHandler {
 
+    protected $logger;
+
+    /**
+     * NotificationHandler constructor.
+     * @param Logger $logger
+     */
+    public function __construct($logger) {
+        $this->logger = $logger;
+    }
+
     public function GetPendingNotifications($data)
     {
-
-
         $notifications = elgg_get_entities_from_relationship(array(
             'relationship' => \WizmassNotifier\Interfaces\WizmassNotification::HAS_ACTOR,
             'relationship_guid' => $data->token->user_guid,
@@ -33,8 +42,7 @@ class NotificationHandler {
 
         $readNotificationsGuids = array_map(function ($item) { return $item->guid; }, $readNotifications);
 
-        echo "Got: " .  count($notifications) . ' unread notifications' . PHP_EOL;
-        echo "Got: " .  count($readNotifications) . ' read notifications' . PHP_EOL;
+        $this->logger->info('processing ' . count($notifications) . ' notifications');
 
         $notificationFactory = NotificationFactory::getInstance();
 
@@ -48,7 +56,7 @@ class NotificationHandler {
             $wizmassNotification = $notificationFactory->Build($notification);
 
             if (!$wizmassNotification) {
-                echo 'error building notifications' . PHP_EOL;
+                $this->logger->info('error building notification: ' . $notification->guid);
             }
             else {
 
@@ -73,13 +81,9 @@ class NotificationHandler {
         /** @var /ElggUser $user */
         $user = get_user($data->token->user_guid);
 
-        echo 'count guids:  ' . count($data->notificationGuids);
-
         if ($user) {
 
             foreach($data->notificationGuids as $guid) {
-
-                echo 'reading guid: ' . $guid;
 
                 $notification = get_entity($guid);
 
@@ -95,7 +99,7 @@ class NotificationHandler {
 
                 } else {
                     //todo
-                    echo 'error...';
+                    $this->logger->info('error while marking as read. notification: ' . $guid);
                 }
             }
         }

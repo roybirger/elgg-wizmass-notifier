@@ -45,11 +45,9 @@ class NotificationFactory {
 
     /**
      * @param \ElggEntity $entity
+     * @return bool|notification
      */
     public function Build($entity) {
-
-        echo $entity->guid . PHP_EOL;
-        echo $entity->getSubtype() . PHP_EOL;
 
         switch ($entity->getSubtype()) {
             case 'sub_comment_notification':

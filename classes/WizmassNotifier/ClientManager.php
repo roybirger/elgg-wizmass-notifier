@@ -10,6 +10,7 @@
 namespace WizmassNotifier;
 
 use Ratchet\ConnectionInterface;
+use Monolog\Logger;
 
 class ClientsManager {
 
@@ -18,22 +19,26 @@ class ClientsManager {
      */
     protected $subscribers;
 
+    protected $logger;
+
     private $tokens;
 
     /**
      * ClientsManager constructor.
      * @param $tokens
+     * @param Logger $logger
      */
-    public function __construct($tokens)
+    public function __construct($tokens, $logger)
     {
         $this->tokens = $tokens;
         $this->subscribers = array();
+        $this->logger = $logger;
     }
 
 
     public function AddClient(ConnectionInterface $client, $data)
     {
-        if ($this->tokens->validateToken($data->token->token)) {
+        if (isset($data->token) && $this->tokens->validateToken($data->token->token)) {
             // TODO Should the storage be injected?
             // TODO Remove users from the storage when they log out.
             $this->subscribers[$data->token->user_guid] = $client;
@@ -62,10 +67,7 @@ class ClientsManager {
             'callbackId' => $this->subscribers[$userId]->callbackId
         ];
 
-        echo 'sending: ' . json_encode($userResponse) . PHP_EOL;
-
-
-
+        $this->logger->info('sending: ' . count($pendingNotifications) . " to user: {$userId}");
 
         $this->subscribers[$userId]->send(json_encode($userResponse));
     }
