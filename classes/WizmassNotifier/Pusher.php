@@ -37,6 +37,7 @@ class Pusher implements MessageComponentInterface {
         $this->logger->pushHandler(new StreamHandler(self::LOG_FILE_NAME,Logger::DEBUG));
         $this->logger->pushHandler(new FirePHPHandler());
         $this->messageHandler = new MessageHandler($tokens,$this->logger);
+        $this->logger->info('push server started');
 
 
     }

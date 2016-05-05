@@ -11,6 +11,7 @@ namespace WizmassNotifier;
 
 use Ratchet\ConnectionInterface;
 use Monolog\Logger;
+use Elgg;
 
 class ClientsManager {
 
@@ -25,7 +26,7 @@ class ClientsManager {
 
     /**
      * ClientsManager constructor.
-     * @param $tokens
+     * @param Tokens $tokens
      * @param Logger $logger
      */
     public function __construct($tokens, $logger)
@@ -38,6 +39,12 @@ class ClientsManager {
 
     public function AddClient(ConnectionInterface $client, $data)
     {
+        if (!mysql_ping()) {
+            $this->logger->info('connection lost. attempting to reconnect');
+            $db = _elgg_services()->db;
+            $db->setupConnections();
+        };
+
         if (isset($data->token) && $this->tokens->validateToken($data->token->token)) {
             // TODO Should the storage be injected?
             // TODO Remove users from the storage when they log out.
